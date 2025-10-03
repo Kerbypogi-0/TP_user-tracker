@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TP Tracker System</title>
+    <title>User Tracker System</title>
     <style>
         * {
             margin: 0;
@@ -26,7 +26,7 @@
             border-radius: 15px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
             border: 1px solid #3a3a3a;
-            max-width: 1000px;
+            max-width: 1200px;
             width: 100%;
             overflow: hidden;
         }
@@ -93,9 +93,19 @@
             box-shadow: 0 4px 12px rgba(212, 175, 55, 0.4);
         }
 
-        .btn-secondary {
-            background: #4a4a4a;
-            margin-top: 10px;
+        .btn-edit {
+            background: #d4af37;
+            color: #000000;
+            padding: 6px 12px;
+            font-size: 12px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        .btn-edit:hover {
+            background: #f4cf47;
         }
 
         .btn-danger {
@@ -124,10 +134,6 @@
 
         .toggle-link:hover {
             text-decoration: underline;
-        }
-
-        .dashboard {
-            padding: 20px;
         }
 
         .dashboard-header {
@@ -220,6 +226,51 @@
             color: #ffffff;
         }
 
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.8);
+        }
+
+        .modal-content {
+            background-color: #2a2a2a;
+            margin: 5% auto;
+            padding: 30px;
+            border: 2px solid #d4af37;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 500px;
+        }
+
+        .modal-header {
+            color: #d4af37;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .close {
+            color: #d4af37;
+            float: right;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        .close:hover {
+            color: #f4cf47;
+        }
+
+        .loading {
+            text-align: center;
+            color: #d4af37;
+            padding: 20px;
+        }
+
         @media (max-width: 768px) {
             .content {
                 padding: 20px;
@@ -239,8 +290,8 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>TP User Tracker System</h1>
-            <p>Trading Partners</p>
+            <h1>📊 User Tracker System</h1>
+            <p>Secure User Management Platform</p>
         </div>
 
         <!-- Login Form -->
@@ -320,6 +371,7 @@
                             <th>Discord Username</th>
                             <th>Upline</th>
                             <th>Registered Date</th>
+                            <th>Action</th>
                         </tr>
                     </thead>
                     <tbody id="userTableBody">
@@ -352,21 +404,75 @@
         </div>
     </div>
 
+    <!-- Edit User Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <span class="close" onclick="closeEditModal()">&times;</span>
+            <h2 class="modal-header">Edit User</h2>
+            <div id="editAlert"></div>
+            <input type="hidden" id="editUserId">
+            <div class="form-group">
+                <label>Username</label>
+                <input type="text" id="editUsername" disabled style="opacity: 0.6;">
+            </div>
+            <div class="form-group">
+                <label>UID</label>
+                <input type="text" id="editUID">
+            </div>
+            <div class="form-group">
+                <label>Deposited Amount</label>
+                <input type="number" id="editDeposit">
+            </div>
+            <div class="form-group">
+                <label>Discord Username</label>
+                <input type="text" id="editDiscord">
+            </div>
+            <div class="form-group">
+                <label>Upline</label>
+                <input type="text" id="editUpline">
+            </div>
+            <button class="btn" onclick="saveUserEdit()">Save Changes</button>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs - Using COMPAT version for simplicity -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
     <script>
-        // Initialize admin account on first load
-        function initializeAdmin() {
-            // Clear any existing data and create fresh admin account
-            const users = [{
-                username: 'admin',
-                password: 'admin123',
-                isAdmin: true,
-                uid: 'ADMIN001',
-                depositedAmount: 0,
-                discordUsername: 'Admin',
-                upline: 'N/A',
-                registeredDate: new Date().toISOString()
-            }];
-            localStorage.setItem('users', JSON.stringify(users));
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyA1cMpPPC0tCROmfjcUDHaFFViLoHkLwMY",
+            authDomain: "tp-user-tracker.firebaseapp.com",
+            projectId: "tp-user-tracker",
+            storageBucket: "tp-user-tracker.firebasestorage.app",
+            messagingSenderId: "29150169787",
+            appId: "1:29150169787:web:026931ebb6dffdcdb3379e"
+        };
+
+        // Initialize Firebase
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        // Initialize admin account
+        async function initializeAdmin() {
+            try {
+                const adminDoc = await db.collection('users').doc('admin').get();
+                if (!adminDoc.exists) {
+                    await db.collection('users').doc('admin').set({
+                        username: 'admin',
+                        password: 'admin123',
+                        isAdmin: true,
+                        uid: 'ADMIN001',
+                        depositedAmount: 0,
+                        discordUsername: 'Admin',
+                        upline: 'N/A',
+                        registeredDate: new Date().toISOString()
+                    });
+                }
+            } catch (error) {
+                console.error('Error initializing admin:', error);
+            }
         }
 
         function showAlert(elementId, message, isSuccess) {
@@ -387,7 +493,7 @@
             document.getElementById('registerForm').classList.remove('hidden');
         }
 
-        function login() {
+        async function login() {
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
 
@@ -396,25 +502,29 @@
                 return;
             }
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const user = users.find(u => u.username === username && u.password === password);
+            try {
+                const userDoc = await db.collection('users').doc(username).get();
 
-            if (user) {
-                localStorage.setItem('currentUser', JSON.stringify(user));
-                showAlert('loginAlert', 'Login successful!', true);
-                setTimeout(() => {
-                    if (user.isAdmin) {
-                        showAdminDashboard();
-                    } else {
-                        showUserDashboard(user);
-                    }
-                }, 500);
-            } else {
-                showAlert('loginAlert', 'Invalid username or password', false);
+                if (userDoc.exists && userDoc.data().password === password) {
+                    const user = { id: userDoc.id, ...userDoc.data() };
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                    showAlert('loginAlert', 'Login successful!', true);
+                    setTimeout(() => {
+                        if (user.isAdmin) {
+                            showAdminDashboard();
+                        } else {
+                            showUserDashboard(user);
+                        }
+                    }, 500);
+                } else {
+                    showAlert('loginAlert', 'Invalid username or password', false);
+                }
+            } catch (error) {
+                showAlert('loginAlert', 'Login error: ' + error.message, false);
             }
         }
 
-        function register() {
+        async function register() {
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const uid = document.getElementById('regUID').value.trim();
@@ -427,63 +537,128 @@
                 return;
             }
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            
-            if (users.some(u => u.username === username)) {
-                showAlert('registerAlert', 'Username already exists', false);
-                return;
+            try {
+                const userDoc = await db.collection('users').doc(username).get();
+                
+                if (userDoc.exists) {
+                    showAlert('registerAlert', 'Username already exists', false);
+                    return;
+                }
+
+                await db.collection('users').doc(username).set({
+                    username,
+                    password,
+                    isAdmin: false,
+                    uid,
+                    depositedAmount,
+                    discordUsername,
+                    upline,
+                    registeredDate: new Date().toISOString()
+                });
+
+                showAlert('registerAlert', 'Registration successful! Please login.', true);
+                
+                setTimeout(() => {
+                    document.getElementById('regUsername').value = '';
+                    document.getElementById('regPassword').value = '';
+                    document.getElementById('regUID').value = '';
+                    document.getElementById('regDeposit').value = '';
+                    document.getElementById('regDiscord').value = '';
+                    document.getElementById('regUpline').value = '';
+                    showLogin();
+                }, 1500);
+            } catch (error) {
+                showAlert('registerAlert', 'Registration error: ' + error.message, false);
             }
-
-            users.push({
-                username,
-                password,
-                isAdmin: false,
-                uid,
-                depositedAmount,
-                discordUsername,
-                upline,
-                registeredDate: new Date().toISOString()
-            });
-
-            localStorage.setItem('users', JSON.stringify(users));
-            showAlert('registerAlert', 'Registration successful! Please login.', true);
-            
-            setTimeout(() => {
-                document.getElementById('regUsername').value = '';
-                document.getElementById('regPassword').value = '';
-                document.getElementById('regUID').value = '';
-                document.getElementById('regDeposit').value = '';
-                document.getElementById('regDiscord').value = '';
-                document.getElementById('regUpline').value = '';
-                showLogin();
-            }, 1500);
         }
 
-        function showAdminDashboard() {
+        async function showAdminDashboard() {
             document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('registerForm').classList.add('hidden');
             document.getElementById('userDashboard').classList.add('hidden');
             document.getElementById('adminDashboard').classList.remove('hidden');
 
-            const users = JSON.parse(localStorage.getItem('users') || '[]');
-            const regularUsers = users.filter(u => !u.isAdmin);
+            try {
+                const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
+                const users = [];
+                
+                usersSnapshot.forEach(doc => {
+                    users.push({ id: doc.id, ...doc.data() });
+                });
 
-            document.getElementById('totalUsers').textContent = regularUsers.length;
-            
-            const totalDeposits = regularUsers.reduce((sum, u) => sum + (u.depositedAmount || 0), 0);
-            document.getElementById('totalDeposits').textContent = `$${totalDeposits.toFixed(2)}`;
+                document.getElementById('totalUsers').textContent = users.length;
+                
+                const totalDeposits = users.reduce((sum, u) => sum + (u.depositedAmount || 0), 0);
+                document.getElementById('totalDeposits').textContent = `$${totalDeposits.toFixed(2)}`;
 
-            const tbody = document.getElementById('userTableBody');
-            tbody.innerHTML = regularUsers.map(user => `
-                <tr>
-                    <td>${user.username}</td>
-                    <td>${user.uid}</td>
-                    <td>$${(user.depositedAmount || 0).toFixed(2)}</td>
-                    <td>${user.discordUsername}</td>
-                    <td>${user.upline}</td>
-                    <td>${new Date(user.registeredDate).toLocaleDateString()}</td>
-                </tr>
-            `).join('');
+                const tbody = document.getElementById('userTableBody');
+                tbody.innerHTML = users.map(user => `
+                    <tr>
+                        <td>${user.username}</td>
+                        <td>${user.uid}</td>
+                        <td>$${(user.depositedAmount || 0).toFixed(2)}</td>
+                        <td>${user.discordUsername}</td>
+                        <td>${user.upline}</td>
+                        <td>${new Date(user.registeredDate).toLocaleDateString()}</td>
+                        <td><button class="btn-edit" onclick="openEditModal('${user.id}')">Edit</button></td>
+                    </tr>
+                `).join('');
+            } catch (error) {
+                console.error('Error loading dashboard:', error);
+            }
+        }
+
+        async function openEditModal(userId) {
+            try {
+                const userDoc = await db.collection('users').doc(userId).get();
+                const user = userDoc.data();
+
+                document.getElementById('editUserId').value = userId;
+                document.getElementById('editUsername').value = user.username;
+                document.getElementById('editUID').value = user.uid;
+                document.getElementById('editDeposit').value = user.depositedAmount;
+                document.getElementById('editDiscord').value = user.discordUsername;
+                document.getElementById('editUpline').value = user.upline;
+
+                document.getElementById('editModal').style.display = 'block';
+            } catch (error) {
+                alert('Error loading user data: ' + error.message);
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+            document.getElementById('editAlert').innerHTML = '';
+        }
+
+        async function saveUserEdit() {
+            const userId = document.getElementById('editUserId').value;
+            const uid = document.getElementById('editUID').value.trim();
+            const depositedAmount = parseFloat(document.getElementById('editDeposit').value) || 0;
+            const discordUsername = document.getElementById('editDiscord').value.trim();
+            const upline = document.getElementById('editUpline').value.trim();
+
+            if (!uid || !discordUsername || !upline) {
+                showAlert('editAlert', 'Please fill in all fields', false);
+                return;
+            }
+
+            try {
+                await db.collection('users').doc(userId).update({
+                    uid,
+                    depositedAmount,
+                    discordUsername,
+                    upline
+                });
+
+                showAlert('editAlert', 'User updated successfully!', true);
+                setTimeout(() => {
+                    closeEditModal();
+                    showAdminDashboard();
+                }, 1000);
+            } catch (error) {
+                showAlert('editAlert', 'Error updating user: ' + error.message, false);
+            }
         }
 
         function showUserDashboard(user) {
@@ -500,7 +675,7 @@
         }
 
         function logout() {
-            localStorage.removeItem('currentUser');
+            sessionStorage.removeItem('currentUser');
             document.getElementById('adminDashboard').classList.add('hidden');
             document.getElementById('userDashboard').classList.add('hidden');
             document.getElementById('loginForm').classList.remove('hidden');
@@ -508,9 +683,8 @@
             document.getElementById('loginPassword').value = '';
         }
 
-        // Check if user is already logged in
         function checkCurrentUser() {
-            const currentUser = JSON.parse(localStorage.getItem('currentUser') || 'null');
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser') || 'null');
             if (currentUser) {
                 if (currentUser.isAdmin) {
                     showAdminDashboard();
@@ -521,9 +695,10 @@
         }
 
         // Initialize on page load
-        initializeAdmin();
-        checkCurrentUser();
+        window.addEventListener('load', () => {
+            initializeAdmin();
+            checkCurrentUser();
+        });
     </script>
 </body>
-
 </html>
