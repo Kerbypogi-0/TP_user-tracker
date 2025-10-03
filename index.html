@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TP User Tracker System</title>
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-6635980952239833"
      crossorigin="anonymous"></script>
+    <title>TP User Tracker System</title>
     <style>
         * {
             margin: 0;
@@ -46,6 +46,17 @@
             margin-bottom: 10px;
         }
 
+        .team-badge {
+            display: inline-block;
+            background: #d4af37;
+            color: #000;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
         .content {
             padding: 40px;
         }
@@ -61,7 +72,7 @@
             font-weight: 600;
         }
 
-        .form-group input {
+        .form-group input, .form-group select {
             width: 100%;
             padding: 12px;
             border: 2px solid #3a3a3a;
@@ -72,7 +83,7 @@
             transition: border-color 0.3s;
         }
 
-        .form-group input:focus {
+        .form-group input:focus, .form-group select:focus {
             outline: none;
             border-color: #d4af37;
         }
@@ -143,6 +154,8 @@
             justify-content: space-between;
             align-items: center;
             margin-bottom: 30px;
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .dashboard-header h2 {
@@ -197,6 +210,12 @@
             background: #3a1a1a;
             color: #f87171;
             border: 1px solid #5a2a2a;
+        }
+
+        .alert-info {
+            background: #1a2a3a;
+            color: #60a5fa;
+            border: 1px solid #2a3a5a;
         }
 
         .stats {
@@ -267,10 +286,36 @@
             color: #f4cf47;
         }
 
-        .loading {
-            text-align: center;
+        .link-box {
+            background: #1a1a1a;
+            border: 2px solid #d4af37;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 20px 0;
+            word-break: break-all;
+        }
+
+        .link-box input {
+            background: transparent;
+            border: none;
             color: #d4af37;
-            padding: 20px;
+            width: 100%;
+            font-family: monospace;
+        }
+
+        .copy-btn {
+            background: #d4af37;
+            color: #000;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+
+        .copy-btn:hover {
+            background: #f4cf47;
         }
 
         @media (max-width: 768px) {
@@ -293,13 +338,47 @@
     <div class="container">
         <div class="header">
             <h1>TP User Tracker System</h1>
-            <p>Trading Partners</p>
+            <p>Multi-Team Management Platform</p>
+            <div id="teamBadge"></div>
+        </div>
+
+        <!-- Landing Page -->
+        <div id="landingPage" class="content">
+            <h2 style="margin-bottom: 20px; color: #d4af37;">Welcome</h2>
+            <div style="text-align: center; margin: 40px 0;">
+                <button class="btn" onclick="showAdminSetup()" style="margin-bottom: 15px;">Create Team (Admin)</button>
+                <button class="btn" onclick="showLogin()" style="background: #4a4a4a;">Login to Existing Team</button>
+            </div>
+        </div>
+
+        <!-- Admin Team Setup -->
+        <div id="adminSetup" class="content hidden">
+            <h2 style="margin-bottom: 20px; color: #d4af37;">Create Your Team</h2>
+            <div id="setupAlert"></div>
+            <div class="form-group">
+                <label>Team Name</label>
+                <input type="text" id="teamName" placeholder="Enter your team name">
+            </div>
+            <div class="form-group">
+                <label>Admin Username</label>
+                <input type="text" id="adminUsername" placeholder="Choose admin username">
+            </div>
+            <div class="form-group">
+                <label>Admin Password</label>
+                <input type="password" id="adminPassword" placeholder="Choose admin password">
+            </div>
+            <button class="btn" onclick="createTeam()">Create Team</button>
+            <div class="toggle-link" onclick="showLanding()">Back to Home</div>
         </div>
 
         <!-- Login Form -->
-        <div id="loginForm" class="content">
+        <div id="loginForm" class="content hidden">
             <h2 style="margin-bottom: 20px; color: #d4af37;">Login</h2>
             <div id="loginAlert"></div>
+            <div class="form-group">
+                <label>Team Code</label>
+                <input type="text" id="loginTeamCode" placeholder="Enter team code">
+            </div>
             <div class="form-group">
                 <label>Username</label>
                 <input type="text" id="loginUsername" placeholder="Enter username">
@@ -310,12 +389,17 @@
             </div>
             <button class="btn" onclick="login()">Login</button>
             <div class="toggle-link" onclick="showRegister()">Don't have an account? Register here</div>
+            <div class="toggle-link" onclick="showLanding()">Back to Home</div>
         </div>
 
         <!-- Registration Form -->
         <div id="registerForm" class="content hidden">
             <h2 style="margin-bottom: 20px; color: #d4af37;">Register New User</h2>
             <div id="registerAlert"></div>
+            <div class="form-group">
+                <label>Team Code</label>
+                <input type="text" id="regTeamCode" placeholder="Enter team code">
+            </div>
             <div class="form-group">
                 <label>Username</label>
                 <input type="text" id="regUsername" placeholder="Choose a username">
@@ -349,6 +433,14 @@
             <div class="dashboard-header">
                 <h2>Admin Dashboard</h2>
                 <button class="btn-danger" onclick="logout()">Logout</button>
+            </div>
+
+            <div class="alert alert-info">
+                <strong>📋 Team Registration Link:</strong>
+                <div class="link-box">
+                    <input type="text" id="teamLink" readonly>
+                </div>
+                <button class="copy-btn" onclick="copyTeamLink()">Copy Link</button>
             </div>
 
             <div class="stats">
@@ -437,10 +529,9 @@
         </div>
     </div>
 
-    <!-- Firebase SDKs - Using COMPAT version for simplicity -->
+    <!-- Firebase SDKs -->
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
-    
 
     <script>
         // Your Firebase configuration
@@ -457,25 +548,9 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // Initialize admin account
-        async function initializeAdmin() {
-            try {
-                const adminDoc = await db.collection('users').doc('admin').get();
-                if (!adminDoc.exists) {
-                    await db.collection('users').doc('admin').set({
-                        username: 'admin',
-                        password: 'admin123',
-                        isAdmin: true,
-                        uid: 'ADMIN001',
-                        depositedAmount: 0,
-                        discordUsername: 'Admin',
-                        upline: 'N/A',
-                        registeredDate: new Date().toISOString()
-                    });
-                }
-            } catch (error) {
-                console.error('Error initializing admin:', error);
-            }
+        // Generate unique team code
+        function generateTeamCode() {
+            return 'TEAM_' + Math.random().toString(36).substr(2, 9).toUpperCase();
         }
 
         function showAlert(elementId, message, isSuccess) {
@@ -486,48 +561,154 @@
             }, 3000);
         }
 
-        function showLogin() {
-            document.getElementById('loginForm').classList.remove('hidden');
+        function hideAllScreens() {
+            document.getElementById('landingPage').classList.add('hidden');
+            document.getElementById('adminSetup').classList.add('hidden');
+            document.getElementById('loginForm').classList.add('hidden');
             document.getElementById('registerForm').classList.add('hidden');
+            document.getElementById('adminDashboard').classList.add('hidden');
+            document.getElementById('userDashboard').classList.add('hidden');
+        }
+
+        function showLanding() {
+            hideAllScreens();
+            document.getElementById('landingPage').classList.remove('hidden');
+            document.getElementById('teamBadge').innerHTML = '';
+        }
+
+        function showAdminSetup() {
+            hideAllScreens();
+            document.getElementById('adminSetup').classList.remove('hidden');
+        }
+
+        function showLogin() {
+            hideAllScreens();
+            document.getElementById('loginForm').classList.remove('hidden');
+            
+            // Check for team code in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const teamCode = urlParams.get('team');
+            if (teamCode) {
+                document.getElementById('loginTeamCode').value = teamCode;
+            }
         }
 
         function showRegister() {
-            document.getElementById('loginForm').classList.add('hidden');
+            hideAllScreens();
             document.getElementById('registerForm').classList.remove('hidden');
+            
+            // Check for team code in URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const teamCode = urlParams.get('team');
+            if (teamCode) {
+                document.getElementById('regTeamCode').value = teamCode;
+            }
+        }
+
+        async function createTeam() {
+            const teamName = document.getElementById('teamName').value.trim();
+            const adminUsername = document.getElementById('adminUsername').value.trim();
+            const adminPassword = document.getElementById('adminPassword').value;
+
+            if (!teamName || !adminUsername || !adminPassword) {
+                showAlert('setupAlert', 'Please fill in all fields', false);
+                return;
+            }
+
+            try {
+                const teamCode = generateTeamCode();
+
+                // Create team
+                await db.collection('teams').doc(teamCode).set({
+                    teamName,
+                    teamCode,
+                    createdDate: new Date().toISOString()
+                });
+
+                // Create admin user
+                await db.collection('users').add({
+                    teamCode,
+                    username: adminUsername,
+                    password: adminPassword,
+                    isAdmin: true,
+                    uid: 'ADMIN',
+                    depositedAmount: 0,
+                    discordUsername: 'Admin',
+                    upline: 'N/A',
+                    registeredDate: new Date().toISOString()
+                });
+
+                showAlert('setupAlert', 'Team created successfully!', true);
+                
+                setTimeout(() => {
+                    const user = {
+                        teamCode,
+                        teamName,
+                        username: adminUsername,
+                        isAdmin: true
+                    };
+                    sessionStorage.setItem('currentUser', JSON.stringify(user));
+                    showAdminDashboard();
+                }, 1000);
+            } catch (error) {
+                showAlert('setupAlert', 'Error creating team: ' + error.message, false);
+            }
         }
 
         async function login() {
+            const teamCode = document.getElementById('loginTeamCode').value.trim();
             const username = document.getElementById('loginUsername').value.trim();
             const password = document.getElementById('loginPassword').value;
 
-            if (!username || !password) {
+            if (!teamCode || !username || !password) {
                 showAlert('loginAlert', 'Please fill in all fields', false);
                 return;
             }
 
             try {
-                const userDoc = await db.collection('users').doc(username).get();
-
-                if (userDoc.exists && userDoc.data().password === password) {
-                    const user = { id: userDoc.id, ...userDoc.data() };
-                    sessionStorage.setItem('currentUser', JSON.stringify(user));
-                    showAlert('loginAlert', 'Login successful!', true);
-                    setTimeout(() => {
-                        if (user.isAdmin) {
-                            showAdminDashboard();
-                        } else {
-                            showUserDashboard(user);
-                        }
-                    }, 500);
-                } else {
-                    showAlert('loginAlert', 'Invalid username or password', false);
+                // Verify team exists
+                const teamDoc = await db.collection('teams').doc(teamCode).get();
+                if (!teamDoc.exists) {
+                    showAlert('loginAlert', 'Invalid team code', false);
+                    return;
                 }
+
+                // Find user
+                const usersSnapshot = await db.collection('users')
+                    .where('teamCode', '==', teamCode)
+                    .where('username', '==', username)
+                    .where('password', '==', password)
+                    .get();
+
+                if (usersSnapshot.empty) {
+                    showAlert('loginAlert', 'Invalid username or password', false);
+                    return;
+                }
+
+                const userDoc = usersSnapshot.docs[0];
+                const user = { 
+                    id: userDoc.id, 
+                    teamName: teamDoc.data().teamName,
+                    ...userDoc.data() 
+                };
+                
+                sessionStorage.setItem('currentUser', JSON.stringify(user));
+                showAlert('loginAlert', 'Login successful!', true);
+                
+                setTimeout(() => {
+                    if (user.isAdmin) {
+                        showAdminDashboard();
+                    } else {
+                        showUserDashboard(user);
+                    }
+                }, 500);
             } catch (error) {
                 showAlert('loginAlert', 'Login error: ' + error.message, false);
             }
         }
 
         async function register() {
+            const teamCode = document.getElementById('regTeamCode').value.trim();
             const username = document.getElementById('regUsername').value.trim();
             const password = document.getElementById('regPassword').value;
             const uid = document.getElementById('regUID').value.trim();
@@ -535,20 +716,32 @@
             const discordUsername = document.getElementById('regDiscord').value.trim();
             const upline = document.getElementById('regUpline').value.trim();
 
-            if (!username || !password || !uid || !discordUsername || !upline) {
+            if (!teamCode || !username || !password || !uid || !discordUsername || !upline) {
                 showAlert('registerAlert', 'Please fill in all fields', false);
                 return;
             }
 
             try {
-                const userDoc = await db.collection('users').doc(username).get();
-                
-                if (userDoc.exists) {
-                    showAlert('registerAlert', 'Username already exists', false);
+                // Verify team exists
+                const teamDoc = await db.collection('teams').doc(teamCode).get();
+                if (!teamDoc.exists) {
+                    showAlert('registerAlert', 'Invalid team code', false);
                     return;
                 }
 
-                await db.collection('users').doc(username).set({
+                // Check if username exists in this team
+                const existingUser = await db.collection('users')
+                    .where('teamCode', '==', teamCode)
+                    .where('username', '==', username)
+                    .get();
+                
+                if (!existingUser.empty) {
+                    showAlert('registerAlert', 'Username already exists in this team', false);
+                    return;
+                }
+
+                await db.collection('users').add({
+                    teamCode,
                     username,
                     password,
                     isAdmin: false,
@@ -562,12 +755,15 @@
                 showAlert('registerAlert', 'Registration successful! Please login.', true);
                 
                 setTimeout(() => {
+                    document.getElementById('regTeamCode').value = teamCode;
                     document.getElementById('regUsername').value = '';
                     document.getElementById('regPassword').value = '';
                     document.getElementById('regUID').value = '';
                     document.getElementById('regDeposit').value = '';
                     document.getElementById('regDiscord').value = '';
                     document.getElementById('regUpline').value = '';
+                    
+                    document.getElementById('loginTeamCode').value = teamCode;
                     showLogin();
                 }, 1500);
             } catch (error) {
@@ -576,15 +772,23 @@
         }
 
         async function showAdminDashboard() {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('userDashboard').classList.add('hidden');
+            hideAllScreens();
             document.getElementById('adminDashboard').classList.remove('hidden');
 
+            const currentUser = JSON.parse(sessionStorage.getItem('currentUser'));
+            document.getElementById('teamBadge').innerHTML = `<span class="team-badge">${currentUser.teamName} - ${currentUser.teamCode}</span>`;
+
+            // Generate and display team link
+            const teamLink = `${window.location.origin}${window.location.pathname}?team=${currentUser.teamCode}`;
+            document.getElementById('teamLink').value = teamLink;
+
             try {
-                const usersSnapshot = await db.collection('users').where('isAdmin', '==', false).get();
-                const users = [];
+                const usersSnapshot = await db.collection('users')
+                    .where('teamCode', '==', currentUser.teamCode)
+                    .where('isAdmin', '==', false)
+                    .get();
                 
+                const users = [];
                 usersSnapshot.forEach(doc => {
                     users.push({ id: doc.id, ...doc.data() });
                 });
@@ -609,6 +813,13 @@
             } catch (error) {
                 console.error('Error loading dashboard:', error);
             }
+        }
+
+        function copyTeamLink() {
+            const linkInput = document.getElementById('teamLink');
+            linkInput.select();
+            document.execCommand('copy');
+            alert('Team link copied to clipboard!');
         }
 
         async function openEditModal(userId) {
@@ -665,12 +876,11 @@
         }
 
         function showUserDashboard(user) {
-            document.getElementById('loginForm').classList.add('hidden');
-            document.getElementById('registerForm').classList.add('hidden');
-            document.getElementById('adminDashboard').classList.add('hidden');
+            hideAllScreens();
             document.getElementById('userDashboard').classList.remove('hidden');
+            document.getElementById('teamBadge').innerHTML = `<span class="team-badge">${user.teamName}</span>`;
 
-            document.getElementById('userDeposit').textContent = `$${(user.depositedAmount || 0).toFixed(2)}`;
+            document.getElementById('userDeposit').textContent = `${(user.depositedAmount || 0).toFixed(2)}`;
             document.getElementById('userUID').textContent = user.uid;
             document.getElementById('userDiscord').textContent = user.discordUsername;
             document.getElementById('userUpline').textContent = user.upline;
@@ -679,11 +889,7 @@
 
         function logout() {
             sessionStorage.removeItem('currentUser');
-            document.getElementById('adminDashboard').classList.add('hidden');
-            document.getElementById('userDashboard').classList.add('hidden');
-            document.getElementById('loginForm').classList.remove('hidden');
-            document.getElementById('loginUsername').value = '';
-            document.getElementById('loginPassword').value = '';
+            showLanding();
         }
 
         function checkCurrentUser() {
@@ -694,17 +900,22 @@
                 } else {
                     showUserDashboard(currentUser);
                 }
+            } else {
+                // Check if there's a team code in URL
+                const urlParams = new URLSearchParams(window.location.search);
+                const teamCode = urlParams.get('team');
+                if (teamCode) {
+                    showRegister();
+                } else {
+                    showLanding();
+                }
             }
         }
 
         // Initialize on page load
         window.addEventListener('load', () => {
-            initializeAdmin();
             checkCurrentUser();
         });
     </script>
 </body>
 </html>
-
-
-
